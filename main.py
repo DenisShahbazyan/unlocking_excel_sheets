@@ -11,6 +11,7 @@ STARTSWITH_SHEET = 'sheet'
 ENDSWITH_SHEET = '.xml'
 TMP_FOLDER = 'tmp/'
 BIN_FILENAME = 'xl/vbaProject.bin'
+WORKBOOK = 'xl/workbook.xml'
 
 
 def sheet_file_modification(filename, EXTRACT_DIR):
@@ -36,6 +37,24 @@ def sheet_file_modification(filename, EXTRACT_DIR):
             EXTRACT_DIR / SHEETS_DIR / sheet, 'w', encoding='utf-8'
         ) as file:
             file.write(data_sheet)
+
+
+def workbook_file_modification(filename, EXTRACT_DIR):
+    """Достает книгу, удаляет с книги защиту и сохраняет на диск.
+    """
+    with zipfile.ZipFile(filename) as z:
+        for name in z.namelist():
+            info = z.getinfo(name)
+            if info.filename == WORKBOOK:
+                z.extract(info.filename, EXTRACT_DIR)
+
+    if os.path.exists(EXTRACT_DIR / WORKBOOK):
+        with open(EXTRACT_DIR / WORKBOOK, 'r') as file:
+            data_book = file.read()
+            data_book = re.sub(r'(<workbookProtection[^<]+)', r'', data_book)
+
+        with open(EXTRACT_DIR / WORKBOOK, 'w', encoding='utf-8') as file:
+            file.write(data_book)
 
 
 def vbaProjectbin_file_modification(filename, EXTRACT_DIR):
@@ -105,6 +124,7 @@ def main():
         EXTRACT_DIR = Path(filename).parent / TMP_FOLDER
 
         sheet_file_modification(filename, EXTRACT_DIR)
+        # workbook_file_modification(filename, EXTRACT_DIR)
         vbaProjectbin_file_modification(filename, EXTRACT_DIR)
 
         update_excel_file(filename)
